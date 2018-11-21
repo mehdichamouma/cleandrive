@@ -13,9 +13,8 @@ var mongoDb = require("./connectors/mongoDbConnector")()
 var parkAI = require("./connectors/parkAIConnector")()
 var pollutionAPI = require("./connectors/pollutionAPIConnector")()
 
-const euclidianDistance = (lat1, lon1, lat2, lon2) => {
-  return 1200
-}
+const { euclidianDistance } = require('./utils')
+
 
 router.get('/car_status', async (req, res) => {
   try {
@@ -30,7 +29,7 @@ router.get('/car_status', async (req, res) => {
     let areaNearbyTaxAmount = null
     let alternativeDistance = null
 
-    if(areaNearby && areaNearByDistance > 5) {
+    if(areaNearby && areaNearByDistance < 1500) {
       alternative = await parkAI.getNearestFreeParkingPlace({ lat, lon });
       alternativeDistance = euclidianDistance(lat, lon, alternative.lat, alternative.lon);
 

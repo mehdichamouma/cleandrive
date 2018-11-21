@@ -34,6 +34,7 @@ module.exports = () => {
     },
     async getNearestArea({ lat, lon }) {
       return Object.keys(places).reduce((min, k) => {
+        console.log(min);
         if(!min || euclidianDistance(lat, lon, places[k][0], places[k][1]) < min.dist) {
           return {
             dist: euclidianDistance(lat, lon, places[k][0], places[k][1]),

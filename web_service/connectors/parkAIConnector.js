@@ -9,8 +9,7 @@ module.exports = () => {
         "position": {
           "type": "Point",
           "coordinates": [
-            10.512625,
-            52.2606285
+            lon, lat
           ]
         },
         "timestamp": Date.now()
@@ -27,20 +26,20 @@ module.exports = () => {
       const data = await res.json()
       console.log(JSON.stringify(data))
       const choice = data.parkingAreasWithOccupancy.reduce((c, p) => {
-        if(p && p.occupancy && p.occupancy.type == "P" && p.occupancy.value < c.min) {
+        if(!c || (p && p.occupancy && p.occupancy.type == "P" && p.occupancy.value < c.min)) {
           return {
             min: p.occupancy.value,
             data: p,
           }
         }
         return c
-      }, { min: 100, data: null });
+      }, null);
 
       if(choice.data) {
         return {
           name: choice.data.parkingArea.name,
-          lat: choice.data.parkingArea.center.coordinates[0],
-          lon: choice.data.parkingArea.center.coordinates[1]
+          lon: choice.data.parkingArea.center.coordinates[0],
+          lat: choice.data.parkingArea.center.coordinates[1]
         }
       }
     }
