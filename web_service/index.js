@@ -95,6 +95,8 @@ router.get('/fine_dust', async (req, res) => {
 
 app.use('/api', router);
 
-app.listen(port)
-
-console.log('Magic happens on port ' + port);
+mongoDb.init()
+.then(() => {
+  app.listen(port)
+  console.log('Magic happens on port ' + port);
+})
