@@ -1,5 +1,7 @@
 # CleanDrive
 
+Welcome to the CleanDrive project :)
+
 <img src="https://github.com/mehdichamouma/cleandrive/raw/master/content/logo.png" alt="alt text" width=300 style="max-width:100%;">
 
 ## Screenshots
