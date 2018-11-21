@@ -1,9 +1,12 @@
+const places = require('./data/places.json')
+const { euclidianDistance } = require('../utils')
+
 module.exports = () => {
   return {
     async getHistoryAndCarDetails(carId) {
 
       // to be implemented
-
+      Object.keys({})
       return {
         carDetails: {
           carId: "PN LX 295",
@@ -30,25 +33,17 @@ module.exports = () => {
       }
     },
     async getNearestArea({ lat, lon }) {
-
-      // to be implemented
-
-      return {
-        name: "Berlin",
-        lat: 40.1,
-        lon: 20.5,
-        sensors: {
-          fineDustSensorsIds: [
-            { sensorId: "xdsa"},
-            { sensorId: "xdsa"}
-          ],
-          pollutionSensorsIds: [
-            { sensorId: "xdsa"},
-            { sensorId: "xdsa"},
-            { sensorId: "xdsa"}
-          ]
+      return Object.keys(places).reduce((min, k) => {
+        if(!min || euclidianDistance(lat, lon, places[k][0], places[k][1]) < min.dist) {
+          return {
+            dist: euclidianDistance(lat, lon, places[k][0], places[k][1]),
+            name: k,
+            lat: places[k][0],
+            lon: places[k][1],
+          }
         }
-      }
+        return min
+      }, null)
     },
   }
 }

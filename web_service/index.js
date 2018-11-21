@@ -23,9 +23,9 @@ router.get('/car_status', async (req, res) => {
 
     const { history, carDetails } = await mongoDb.getHistoryAndCarDetails(carId)
     const areaNearby = await mongoDb.getNearestArea({ lat, lon })
-
-    const areaNearByDistance = euclidianDistance(lat, lon, areaNearby.lat, areaNearby.lon)
-
+    console.log(areaNearby);
+    const areaNearByDistance = areaNearby.dist
+    console.log(areaNearByDistance);
     let alternative = null
     let areaNearbyTaxAmount = null
     let alternativeDistance = null
@@ -35,7 +35,9 @@ router.get('/car_status', async (req, res) => {
       alternativeDistance = euclidianDistance(lat, lon, alternative.lat, alternative.lon);
 
       const polutionIndice = await pollutionAPI.getPolutionIndice({
-        sensors: areaNearby.sensors
+        lat: areaNearby.lat,
+        lon: areaNearby.lon,
+        radius: 10000
       })
 
       areaNearbyTaxAmount = polutionIndice * carDetails.cleanDriveIndice * 10
@@ -61,8 +63,20 @@ router.get('/car_status', async (req, res) => {
 });
 
 router.post('/car_identification', async () => {
-  
+
 });
+
+router.get('/fine_dust', async (req, res) => {
+  try {
+    const data = await pollutionAPI.getFinedustDataWithinArea({})
+    res.json(data)
+  }
+  catch(e) {
+    console.error(e)
+
+  }
+
+})
 
 app.use('/api', router);
 
