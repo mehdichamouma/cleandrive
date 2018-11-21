@@ -1,4 +1,6 @@
-The predict_image.py is using the trained model to detect the Car Plates in the given images as well as detect the Characters inside the found Car Plates 
+The predict_image.py is using the trained model to detect the Car Plates in the given images as well as detect the Characters inside the found Car Plates.
+
+The found Plate No. will be updated via POST request to the Heruko API.
 
 
 Usage : 
