@@ -1,10 +1,61 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import { Constants } from 'expo';
+import { MapView } from 'expo';
+
+const colors = [
+  "#9EB25D",
+  "#A7C6DA",
+  "#EEFCCE",
+  "#C97064",
+  "#EDFF71"
+]
+
+const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 
 export default class App extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      loaded: false,
+      carDetails: {
+        balance: 0,
+      },
+      location: {
+        lat: 0,
+        lon: 0,
+      },
+      areaNearby: {
+        lat: 0,
+        lon: 0
+      },
+      history: []
+    }
+  }
+
+  componentDidMount() {
+    const locationLookup = async () => {
+      const res = await fetch('http://10.70.3.121:8080/demo/location')
+      const data = await res.json()
+      this.setState({
+        location: data
+      })
+      setTimeout(locationLookup, 1000)
+    }
+
+    const step = async () => {
+      let { lat, lon } = this.state.location
+      const res = await fetch(`http://10.70.3.121:8080/api/car_status?lat=${lat}&lon=${lon}&carId=PNLX295`)
+      const data = await res.json()
+      this.setState(data)
+      setTimeout(step, 2000)
+    }
+    step()
+    locationLookup()
+  }
+
   renderMain() {
-    let state = 2
+    let state = this.state.alternative ? 2 : 1
     if(state == 1) {
       return (
         <View style={styles.mainGood}>
@@ -17,13 +68,13 @@ export default class App extends React.Component {
         <View style={styles.mainNearby}>
           <View style={styles.areaNearby}>
             <Text style={styles.areaNearbyText}>
-              Be careful, paid area nearby: <Text style={styles.nearByOutline}>Berlin</Text>
+              You will enter <Text style={styles.nearByOutline}>{this.state.areaNearby.name}</Text>
             </Text>
           </View>
           <View style={styles.alternative}>
             <View style={styles.alternativeDescription}>
               <Text style={styles.alternativeText}>
-                You can park for free at <Text style={styles.nearByOutline}>800 m</Text> and save <Text style={styles.nearByOutline}>2.10 €</Text>.
+                You can park for free at <Text style={styles.nearByOutline}>{Math.floor(this.state.alternativeDistance)} m</Text> and save <Text style={styles.nearByOutline}>{Math.round(this.state.areaNearbyTaxAmount * 100) / 100} €</Text>.
               </Text>
             </View>
             <View style={styles.alternativeAction}>
@@ -45,18 +96,69 @@ export default class App extends React.Component {
     }
   }
 
-  renderHistoryRow(areaName, amount, ts) {
+  renderBottom() {
+    const state = this.state.alternative ? 1 : 0
+    if(state == 0) {
+      return (
+        <View style={styles.history}>
+          <View>
+            <Text style={{ color: "white" }}>History</Text>
+          </View>
+          {this.state.history.slice(0, 3).map((h, i) => this.renderHistoryRow(h.place, h.amount, new Date(h.ts), i))}
+        </View>
+      )
+    }
+    else if (state == 1) {
+      var alternativeMarker
+      if(this.state.alternative) {
+        alternativeMarker = (
+          <MapView.Marker
+            coordinate={{
+              latitude: this.state.alternative.lat,
+              longitude: this.state.alternative.lon,
+            }}
+            title={"Parking Area"}
+            description={"parking area nearby"}
+          />
+        )
+      }
+      return (
+        <MapView
+          style={styles.history}
+          region={{
+            latitude: this.state.location.lat,
+            longitude: this.state.location.lon,
+            latitudeDelta: this.state.alternative ? Math.abs(this.state.location.lat - this.state.alternative.lat) * 2.5 : 0.03,
+            longitudeDelta: this.state.alternative ? Math.abs(this.state.location.lon - this.state.alternative.lon) * 2.5 : 0.05,
+          }}
+          showsUserLocation={true}
+        >
+          <MapView.Marker
+            coordinate={{
+              latitude: this.state.location.lat,
+              longitude: this.state.location.lon,
+            }}
+            title={"Parking Area"}
+            description={"parking area nearby"}
+          />
+          {alternativeMarker}
+        </MapView>
+      )
+    }
+  }
+
+  renderHistoryRow(areaName, amount, ts, idx) {
     return (
-      <View style={styles.historyRow}>
+      <View key={idx} style={styles.historyRow}>
         <View style={styles.rowDate}>
-          <Text style={styles.rowDateDay}>20</Text>
-          <Text style={styles.rowDateMonth}>Nov</Text>
+          <Text style={styles.rowDateDay}>{ts.getDate()}</Text>
+          <Text style={styles.rowDateMonth}>{ months[ts.getMonth()] }</Text>
         </View>
         <View style={styles.rowArea}>
-          <Text style={styles.rowAreaText}>Koln</Text>
+          <Text style={styles.rowAreaText}>{areaName.charAt(0).toUpperCase() + areaName.slice(1)}</Text>
         </View>
         <View style={styles.rowAmount}>
-          <Text style={styles.rowAmountText}>-3.05€</Text>
+          <Text style={styles.rowAmountText}>-{Math.floor(amount * 100) / 100}€</Text>
         </View>
       </View>
     )
@@ -67,7 +169,7 @@ export default class App extends React.Component {
       <View style={styles.container}>
         <View style={styles.statusBar} />
         <View style={styles.header}>
-          <Text style={{ color: "green", fontSize: 21 }}>Clean Drive</Text>
+          <Text style={{ color: "white", fontSize: 21 }}>Clean Drive</Text>
         </View>
         <View style={styles.userDetails}>
           <View style={styles.carDetails}>
@@ -77,15 +179,15 @@ export default class App extends React.Component {
               </View>
 
             </View>
+          </View>
+          <View style={styles.balanceDetails}>
+            <View style={styles.balanceDetailsCard}>
+              <Text style={styles.balanceDetailsText}>+ { Math.floor(this.state.carDetails.balance * 100) / 100 } €</Text>
+            </View>
             <View style={styles.cleanDriveStatus}>
               <View style={styles.cleanDriveStatusCard}>
                 <Text style={styles.cleanDriveStatusText}>Clean Drive Status: Good</Text>
               </View>
-            </View>
-          </View>
-          <View style={styles.balanceDetails}>
-            <View style={styles.balanceDetailsCard}>
-              <Text style={styles.balanceDetailsText}>+ 10.15 €</Text>
             </View>
           </View>
         </View>
@@ -93,15 +195,7 @@ export default class App extends React.Component {
           <View style={styles.main}>
             {this.renderMain()}
           </View>
-          <View style={styles.history}>
-            <View>
-              <Text style={{ color: "white" }}>History</Text>
-            </View>
-            {this.renderHistoryRow()}
-            {this.renderHistoryRow()}
-            {this.renderHistoryRow()}
-          </View>
-
+          {this.renderBottom()}
         </View>
 
       </View>
@@ -112,14 +206,14 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors[1],
   },
   header: {
-    height: 30,
+    height: 35,
     padding: 5
   },
   userDetails: {
-    backgroundColor: "#eee",
+    backgroundColor: colors[1],
     flex: 1,
     flexDirection: "row"
   },
@@ -134,7 +228,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
-    borderWidth: 1
+    borderWidth: 1,
+    borderRadius: 5,
+    borderColor: "grey"
   },
   carIdText: {
     textAlign: "center",
@@ -146,10 +242,6 @@ const styles = StyleSheet.create({
     flex: 2
   },
   balanceDetailsCard: {
-    height: 100,
-    width: 100,
-    borderRadius: 50,
-    backgroundColor: "grey",
     padding: 10,
     justifyContent: "center",
     alignItems: "center",
@@ -166,8 +258,8 @@ const styles = StyleSheet.create({
   },
   cleanDriveStatusCard: {
     margin: 10,
-    borderRadius: 15,
-    backgroundColor: "green",
+    borderRadius: 5,
+    backgroundColor: colors[0],
     padding: 5,
     justifyContent: "center",
     alignItems: "center",
@@ -178,29 +270,28 @@ const styles = StyleSheet.create({
     color: "white",
   },
   body: {
-    flex: 3
+    flex: 5
   },
   statusBar: {
-    backgroundColor: "green",
+    backgroundColor: colors[2],
     height: Constants.statusBarHeight,
   },
   history: {
     flex: 7,
-    backgroundColor: "#EFEFEF"
   },
   historyRow: {
     flex: 1,
     margin: 10,
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: "red",
+    borderColor: colors[4],
     borderRadius: 5
   },
   rowDate: {
     width: 80,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white"
+    backgroundColor: "#FDFDFD"
   },
   rowDateDay: {
     fontSize: 18
@@ -210,13 +301,13 @@ const styles = StyleSheet.create({
   },
   rowArea: {
     flex: 2,
-    backgroundColor: '#FDFDFD',
+    backgroundColor: '#EEE',
     justifyContent: "center",
     paddingLeft: 10
   },
   rowAreaText: {
     fontSize: 20,
-    //color: "green"
+    color: colors[0]
   },
   rowAmount: {
     flex: 1,
@@ -226,7 +317,7 @@ const styles = StyleSheet.create({
   },
   rowAmountText: {
     fontSize: 20,
-    color: "red"
+    color: colors[3]
   },
   main: {
     flex: 4,
@@ -234,21 +325,23 @@ const styles = StyleSheet.create({
   mainGood: {
     justifyContent: "center",
     alignItems: "center",
-    flex: 1
+    flex: 1,
+    backgroundColor: colors[2]
   },
   mainGoodText: {
     fontSize: 20,
-    color: "green"
+    color: colors[0]
   },
   mainNearby: {
-    backgroundColor: "rgb(110,110,240)",
+    backgroundColor: "rgba(0,0,0,0.1)",
     flex: 1,
-    padding: 10
+
   },
   areaNearby: {
-    //backgroundColor: "rgba(255,255,255,0.4)",
+    backgroundColor: "rgba(255,255,255,0.1)",
     flex: 1,
-    justifyContent: "center"
+    justifyContent: "center",
+    padding: 10
   },
   areaNearbyText: {
     color: "white",
@@ -261,7 +354,8 @@ const styles = StyleSheet.create({
   },
   alternative: {
     flex: 2,
-    flexDirection: "row"
+    flexDirection: "row",
+    padding: 10
   },
   alternativeText: {
     color: "white",

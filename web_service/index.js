@@ -1,6 +1,7 @@
 var express    = require('express');
 var app        = express();
 var bodyParser = require('body-parser');
+var fetch = require('node-fetch');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -94,6 +95,24 @@ router.get('/fine_dust', async (req, res) => {
 })
 
 app.use('/api', router);
+
+var demo = express.Router();
+
+var location = {
+  lat: 50.8208,
+  lon: 6.2896,
+}
+
+demo.get('/location', (req, res) => {
+  res.json(location)
+})
+
+demo.post('/location', (req, res) => {
+  location = req.body
+  res.json(location)
+})
+
+app.use('/demo', demo);
 
 mongoDb.init()
 .then(() => {
