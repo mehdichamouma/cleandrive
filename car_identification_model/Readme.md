@@ -15,3 +15,5 @@ python predict_images.py --model exported_model/frozen_inference_graph.pb \
  
  
 The Basic Model Files can be downloaded from this link : https://drive.google.com/file/d/1fAafi6V6vtiqAirYNOQJmc6G7FLb4eC6/view
+
+Credits to: https://github.com/stevefielding/tensorflow-anpr
