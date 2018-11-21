@@ -1,35 +1,21 @@
 const places = require('./data/places.json')
 const { euclidianDistance } = require('../utils')
+const cars = require('./data/cars')
+
 
 module.exports = () => {
   return {
     async getHistoryAndCarDetails(carId) {
+      const car = cars.find(c => c.carId == carId)
+      const balance = car.history.reduce((t, c) => t + c.amount, 0)
 
-      // to be implemented
-      Object.keys({})
       return {
         carDetails: {
-          carId: "PN LX 295",
-          balance: 10.05,
-          cleanDriveIndice: 0.2 // [0; 1]
+          carId,
+          balance,
+          cleanDriveIndice: car.cleanDriveIndex
         },
-        history: [
-          {
-            areaName: "Koln",
-            taxAmount: 3.01,
-            ts: new Date(2018, 10, 17, 5, 20),
-          },
-          {
-            areaName: "Muenech",
-            taxAmount: 1.04,
-            ts: new Date(2018, 10, 17, 5, 20),
-          },
-          {
-            areaName: "Leverkusen",
-            taxAmount: 1.4,
-            ts: new Date(2018, 10, 17, 5, 20),
-          }
-        ]
+        history: car.history
       }
     },
     async getNearestArea({ lat, lon }) {
@@ -46,5 +32,20 @@ module.exports = () => {
         return min
       }, null)
     },
+    async getPlaceByName(placeName) {
+      return {
+        name: placeName,
+        lat: places[placeName][0],
+        lon: places[placeName][1]
+      }
+    },
+    async updateHistory({ carId, place, amount }) {
+      var c = cars.find(c => c.carId == carId)
+      c.history.push({
+        ts: new Date(),
+        place,
+        amount,
+      })
+    }
   }
 }

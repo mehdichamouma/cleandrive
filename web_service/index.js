@@ -61,8 +61,24 @@ router.get('/car_status', async (req, res) => {
 
 });
 
-router.post('/car_identification', async () => {
+router.post('/car_identification', async (req, res) => {
+  try {
+    const { place, carId } = req.body
+    const { history, carDetails } = await mongoDb.getHistoryAndCarDetails(carId)
+    const { lat, lon } = await mongoDb.getPlaceByName(place)
+    const polutionIndice = await pollutionAPI.getPolutionIndice({
+      lat: lat,
+      lon: lon,
+      radius: 10000
+    })
 
+    const areaNearbyTaxAmount = polutionIndice * carDetails.cleanDriveIndice * 10
+    await mongoDb.updateHistory({ carId, place, amount: areaNearbyTaxAmount })
+    res.json({ updated: true })
+  }
+  catch(e) {
+    console.error(e)
+  }
 });
 
 router.get('/fine_dust', async (req, res) => {
