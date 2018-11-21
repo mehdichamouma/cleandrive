@@ -60,6 +60,10 @@ router.get('/car_status', async (req, res) => {
 
 });
 
+router.post('/car_identification', async () => {
+  
+});
+
 app.use('/api', router);
 
 app.listen(port)
